@@ -1,0 +1,156 @@
+
+{% extends 'main-layout.twig' %}
+{% block pagetitle %}داشبورد{% endblock %}
+
+{% block content %}
+	 <!-- محتوای صفحه -->
+            <div class="p-6">
+                <!-- کارت‌های خلاصه وضعیت -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-green-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500">کل درآمد</p>
+                                <p class="text-2xl font-bold mt-2">{{toPrc(income)}} تومان</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-arrow-up text-green-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-red-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500">کل هزینه</p>
+                                <p class="text-2xl font-bold mt-2">{{toPrc(expense)}} تومان</p>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-full">
+                                <i class="fas fa-arrow-down text-red-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-indigo-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500">موجودی</p>
+                                <p class="text-2xl font-bold mt-2 text-{{remain < 0 ? 'red':'green'}}-500">{{toPrc(remain)}} تومان</p>
+                            </div>
+                            <div class="bg-indigo-100 p-3 rounded-full">
+                                <i class="fas fa-wallet text-indigo-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نمودار و تراکنش‌های اخیر -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-gray-800">روند درآمد و هزینه</h3>
+                            
+                        </div>
+                        <div class="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <canvas id="chart-container" style="width:100%;max-width:600px;height:100%"></canvas>
+                        </div>
+                    </div>
+
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-gray-800">تراکنش‌های اخیر</h3>
+                            <a href="{{base_url('/Transactions/index')}}" class="text-sm text-indigo-600">مشاهده همه</a>
+                        </div>
+                        <div class="space-y-4">
+                            
+                            {% for transaction in transactions %}
+                                <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="bg-indigo-100 p-2 rounded-full">
+                                            <i class="fas fa-money-bill-wave text-green-500"></i>
+                                        </div>
+                                        <div class="mr-3">
+                                            <p class="font-medium">{{transaction.title}}</p>
+                                            <p class="text-xs text-gray-500">نوع: {{transaction.type == 'income'? 'درآمد' : 'هزینه'}}</p>
+                                        </div>
+                                        
+                                    </div>
+                                    <p class="text-{{transaction.type == 'income'? 'green' : 'red'}}-500 font-medium">{{transaction.type == 'income'? '+' : '-'}} {{toPrc(transaction.amount)}} تومان</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- فرم افزودن تراکنش جدید -->
+                <div class="mt-6 bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-gray-800 mb-4">افزودن تراکنش جدید</h3>
+                    <form class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4" method="POST" action="{{base_url('/Transactions/insert_transaction')}}">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">عنوان</label>
+                            <input name="title" type="text" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">مبلغ (تومان)</label>
+                            <input name="amount" type="number" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">نوع</label>
+                            <select name="type" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                                <option value="income">درآمد</option>
+                                <option value="expense">هزینه</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی</label>
+                            <select name="category_id" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                                <option selected disabled>انتخاب کنید</option>
+                                {% for category in categories %}
+                                    <option value="{{category.id}}">{{category.title}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                ثبت تراکنش
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <script>
+                $(function(){
+                    const xValues =[
+                     {%for date in dates%}
+                        "{{toNum(jdate(date))}}",
+                     {% endfor %}
+                    ]
+
+                    new Chart("chart-container", {
+                        type: "line",
+                        data: {
+                          labels: xValues,
+                          datasets: [{
+                            data: [
+                                {%for income in allIncomes%}
+                                    "{{income}}",
+                                {% endfor %}
+                            ],
+                            borderColor: "blue",
+                            fill: false
+                          },{
+                            data: [
+                                {%for expense in allExpenses%}
+                                    "{{expense}}",
+                                {% endfor %}
+                            ],
+                            borderColor: "red",
+                            fill: false
+                          }]
+                        },
+                        options: {
+                          legend: {display: false}
+                        }
+                    });
+                });
+            </script>
+{% endblock %}
