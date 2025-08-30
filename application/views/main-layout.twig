@@ -84,10 +84,5 @@
 				</main>
 			</div>
 		</body>
-		<script>
-			{% if flash('errors') %}
-				Swal.fire({title: "خطا", html: `{{flash('errors')|striptags}}`, icon: "error", confirmButtonText: 'تائید'});{% endif %}{% if flash('success') %}
-				Swal.fire({title: "عملیات موفق", text: `{{flash('success')|striptags}}`, icon: "success", confirmButtonText: 'تائید'});
-			{% endif %}
-		</script>
+		<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 	</html>

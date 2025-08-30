@@ -26,6 +26,11 @@ class Category_model extends CI_Model{
         return $user->result();
     }
 
+    public function showCategory(int $id){
+        $category = $this->db->where('id',$id)->from('categories')->get();
+        return $category->row();
+    }
+
     public function insertCategory(string $title){
         $data = [
             'user_id' => $this->userId,

@@ -346,8 +346,7 @@
 		let currentPage = url.searchParams.get('page') || 1;
 		let siblingPage = parseInt(currentPage) + navigate;
 		url.searchParams.set('page', siblingPage);
-		if (siblingPage >= 1 && siblingPage <= {{ lastPage }
-	}) {
+		if (siblingPage >= 1 && siblingPage <= {{ lastPage }}) {
 		window.location.href = url.toString();
 	}
 }
