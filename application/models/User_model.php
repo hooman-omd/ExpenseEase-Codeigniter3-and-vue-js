@@ -27,14 +27,13 @@ class User_model extends CI_Model{
     }
 
     public function checkLogin(string $userName,string $password){
-        $login = $this->db->select('id,name,profile_image_url')
+        $login = $this->db->select('id,name,profile_image_url,password')
         ->where('name',$userName)
-        ->where('password',$password)
         ->from('users')
         ->get()
         ->row();
 
-        if ($login) {
+        if ($login && password_verify($password,$login->password)) {
             return ['status'=>true,'id'=>$login->id,'name'=>$login->name,'url'=>$login->profile_image_url];
         }
 

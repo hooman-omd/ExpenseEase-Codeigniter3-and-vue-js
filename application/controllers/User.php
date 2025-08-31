@@ -14,8 +14,17 @@ class User extends BaseController
 
     public function index()
     {
+        $this->twig->render('user.twig');
+    }
+
+    public function getUser(){
         $userData = $this->userModel->getUser();
-        $this->twig->render('user.twig', ['user' => $userData]);
+        $response = [
+            'status' => 'success',
+            'message' => 'user retrieved successfully',
+            'data' => $userData
+        ];
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
 
@@ -40,15 +49,23 @@ class User extends BaseController
         ]);
 
         if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('errors', validation_errors());
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+            'status' => 'failed',
+            'message' => validation_errors()
+            ];
+
+            $this->output->set_content_type('application/json')->set_output(json_encode($response));
         } else {
             $this->userModel->updateUser([
                 'name' => $this->input->post('name'),
                 'email' => $this->input->post('email')
             ]);
-            $this->session->set_flashdata('success', 'اطلاعات کاربری بروزرسانی شدند');
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+            'status' => 'success',
+            'message' => 'اطلاعات کاربری بروزرسانی شدند'
+            ];
+
+            $this->output->set_content_type('application/json')->set_output(json_encode($response));
         }
     }
 
@@ -81,22 +98,32 @@ class User extends BaseController
         ]);
 
         if ($this->form_validation->run() == FALSE) {
-
-            $this->session->set_flashdata('errors', validation_errors());
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+            'status' => 'failed',
+            'message' => validation_errors()
+            ];
+            return $this->output->set_content_type('application/json')->set_output(json_encode($response));
         } else {
 
             $userData = $this->userModel->getUser();
-            if ($this->input->post('current_password') != $userData->password) {
-                $this->session->set_flashdata('errors', "رمزعبور وارد شده نامعتبر می باشد");
-                redirect($_SERVER['HTTP_REFERER']);
+            if (!password_verify($this->input->post('current_password'),$userData->password)) {
+                $response = [
+                'status' => 'failed',
+                'message' => "رمزعبور فعلی وارد شده نامعتبر می باشد"
+                ];
+                return $this->output->set_content_type('application/json')->set_output(json_encode($response)); 
             }
 
+            $newPassword = password_hash($this->input->post('new_password'), PASSWORD_DEFAULT);
+
             $this->userModel->updateUser([
-                'password' => $this->input->post('new_password'),
+                'password' => $newPassword,
             ]);
-            $this->session->set_flashdata('success', "رمزعبور بروزرسانی شد");
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+                'status' => 'success',
+                'message' => "رمزعبور بروزرسانی شد"
+                ];
+                $this->output->set_content_type('application/json')->set_output(json_encode($response));
         }
     }
 
@@ -110,14 +137,23 @@ class User extends BaseController
 
         $result = $this->upload->do_upload('profile_image');
         if (!$result) {
-            $this->session->set_flashdata('errors',$this->upload->display_errors());
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+            'status' => 'failed',
+            'message' => $this->upload->display_errors()
+            ];
+
+            $this->output->set_content_type('application/json')->set_output(json_encode($response));
         }else{
-            $url = base_url('/uploads/profiles/'.$config['file_name']);
+            $data = $this->upload->data();
+            $url = base_url('/uploads/profiles/'.$data['file_name']);
             $this->userModel->uploadProfileImage($url);
             $this->session->set_userdata('url',$url);
-            $this->session->set_flashdata('success','تصویر جدید با موفقیت آپلود شد');
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+            'status' => 'success',
+            'message' => 'تصویر جدید با موفقیت آپلود شد'
+            ];
+
+            $this->output->set_content_type('application/json')->set_output(json_encode($response));
         }
     }
 }

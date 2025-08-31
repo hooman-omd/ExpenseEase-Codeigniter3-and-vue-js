@@ -245,7 +245,7 @@ $(function(){
                           dataType: 'json',
                           success: function(response) {
                             if (response.status === 'success') {
-                              console.error('Success :', response.message);
+                              console.log('Success :', response.message);
                               selectCategory.fetchCategories();
                               vm.categoryTitle='';
                               $("#category_id").val('');
