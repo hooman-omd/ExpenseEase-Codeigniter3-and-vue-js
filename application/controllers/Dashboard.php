@@ -14,6 +14,10 @@ class Dashboard extends BaseController{
     }
 
     public function index(){
+        $this->twig->render('dashboard.twig');
+    }
+
+    public function getData(){
         $sum = $this->transactionModel->getSum();
         $data['income'] = $sum['income']->amount ?? 0;
         $data['expense'] = $sum['expense']->amount ?? 0;
@@ -26,8 +30,13 @@ class Dashboard extends BaseController{
         $data['dates'] = array_column($dates, 'txn_date');
         $data['allIncomes'] = array_column($dates, 'all_incomes');
         $data['allExpenses'] = array_column($dates, 'all_expenses');
-        
 
-        $this->twig->render('dashboard.twig',$data);
+        $response = [
+            'status' => 'success',
+            'message' => 'Data retrieved successfully',
+            'data' => $data
+        ];
+
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 }

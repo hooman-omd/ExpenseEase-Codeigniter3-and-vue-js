@@ -17,18 +17,23 @@ class Transactions extends BaseController
 
     public function index()
     {
+        $this->twig->render('transaction.twig');
+    }
+
+    public function getData()
+    {
         $categoryId = $this->input->get('category_id');
         $type = $this->input->get('type');
         $page = $this->input->get('page') ?? 1;
-        
+
 
         $sum = $this->transactionModel->getSum();
         $data['categories'] = $this->categoryModel->getCategories();
 
-        $transactionData = $this->transactionModel->getTransactions($categoryId,$type,$page);
+        $transactionData = $this->transactionModel->getTransactions($categoryId, $type, $page);
         $data['transactions'] = $transactionData['transactions'];
-        
-        $data['currentRecords']= count($data['transactions']);
+
+        $data['currentRecords'] = count($data['transactions']);
         $totalPages = $transactionData['total_pages'];
         $range = 2;
 
@@ -38,14 +43,30 @@ class Transactions extends BaseController
         $pages = range($start, $end);
         $data['pages'] = $pages;
         $data['lastPage'] = $totalPages;
-        $data['currentPage']= $page;
+        $data['currentPage'] = $page;
         $data['totalRecords'] = $transactionData['total_records'];
         $data['offset'] = $transactionData['offset'];
 
         $data['income'] = $sum['income']->amount ?? 0;
         $data['expense'] = $sum['expense']->amount ?? 0;
-        
-        $this->twig->render('transaction.twig', $data);
+
+        $response = [
+            'status' => 'success',
+            'message' => 'Data retrieved successfully',
+            'data' => $data
+        ];
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    }
+
+    public function getTransaction(){
+        $id = $this->input->get("id");
+        $transaction = $this->transactionModel->getTransaction($id);
+        $response = [
+            'status' => 'success',
+            'message' => 'Transaction retrieved successfully',
+            'data' => $transaction
+        ];
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
     public function insert_transaction()
@@ -87,8 +108,10 @@ class Transactions extends BaseController
         );
 
         if ($this->form_validation->run() == FALSE) {
-            $this->session->set_flashdata('errors', validation_errors());
-            redirect($_SERVER['HTTP_REFERER']);
+            $response = [
+                'status' => 'failed',
+                'message' => validation_errors()
+            ];
         } else {
             $message = '';
             if (empty($this->input->post('transaction_id'))) {
@@ -98,7 +121,10 @@ class Transactions extends BaseController
                     'type' => $this->input->post('type'),
                     'category_id' => $this->input->post('category_id')
                 ]);
-                $message = 'تراکنش جدید ثبت شد';
+                $response = [
+                    'status' => 'success',
+                    'message' => 'تراکنش جدید ثبت شد'
+                ];
             } else {
                 $this->transactionModel->updateTransaction($this->input->post('transaction_id'), [
                     'title' => $this->input->post('title'),
@@ -106,18 +132,23 @@ class Transactions extends BaseController
                     'type' => $this->input->post('type'),
                     'category_id' => $this->input->post('category_id')
                 ]);
-                $message = 'تراکنش مورد نظر بروزرسانی شد';
+                $response = [
+                    'status' => 'success',
+                    'message' => 'تراکنش مورد نظر بروزرسانی شد'
+                ];
             }
-
-            $this->session->set_flashdata('success', $message);
-            redirect($_SERVER['HTTP_REFERER']);
         }
+
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 
     public function delete_transaction(int $id)
     {
         $this->transactionModel->deleteTransaction($id);
-        $this->session->set_flashdata('success', 'تراکنش مورد نظر حذف شد');
-        redirect($_SERVER['HTTP_REFERER']);
+        $response = [
+            'status' => 'success',
+            'message' => 'تراکنش مورد نظر حذف شد'
+        ];
+        return $this->output->set_content_type('application/json')->set_output(json_encode($response));
     }
 }

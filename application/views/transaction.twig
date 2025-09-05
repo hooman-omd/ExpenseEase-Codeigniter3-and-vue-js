@@ -4,50 +4,50 @@
 {% endblock %}
 
 {% block content %}
-<div class="p-6">
+<div id="transaction-page" class="p-6">
 	<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
 		<h3 class="text-lg font-semibold text-gray-800">تراکنش‌های مالی شما</h3>
 
 		<div class="flex flex-wrap gap-3 items-center w-full md:w-auto">
 			<!-- Add Transaction Button -->
-			<button id="addTransactionBtn"
+			<button id="addTransactionBtn" @click="showInsertModal"
 				class="bg-indigo-600 text-white mx-6 py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-center">
 				<i class="fas fa-plus ml-1"></i>
 				تراکنش جدید
 			</button>
 
 			<!-- Form (now horizontal) -->
-			<form class="flex flex-wrap gap-2 items-center">
+			<form @submit.prevent="getData(1)" class="flex flex-wrap gap-2 items-center">
 				<!-- Category Dropdown -->
-				<select name="category_id" id="categoryFilter"
+				<select v-model="categoryId" name="category_id" id="categoryFilter"
 					class="border rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-					<option selected disabled>انتخاب کنید</option>
-					{% for category in categories %}
-					<option value="{{category.id}}">{{category.title}}</option>
-					{% endfor %}
+					<option selected disabled value='0'>انتخاب کنید</option>
+					
+					<option v-for="category in categories" :value="category.id" v-html="category.title"></option>
+					
 				</select>
 
 				<!-- Type Dropdown -->
-				<select name="type" id="typeFilter"
+				<select name="type" id="typeFilter" v-model="type"
 					class="border rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-					<option selected disabled>انتخاب کنید</option>
+					<option selected disabled :value='null'>انتخاب کنید</option>
 					<option value="income">درآمد</option>
 					<option value="expense">هزینه</option>
 				</select>
 
 				<!-- Search Button -->
-				<button
+				<button type="submit"
 					class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-center">
 					<i class="fa-solid fa-magnifying-glass"></i>
 					جستجو
 				</button>
 
 				<!-- Reset Link -->
-				<a href="{{base_url('/Transactions/index')}}"
+				<button @click="resetAndFetch"
 					class="cursor-pointer bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-center">
 					<i class="fa-solid fa-arrows-rotate"></i>
 					نمایش همه
-				</a>
+				</button>
 			</form>
 		</div>
 	</div>
@@ -58,8 +58,7 @@
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-gray-500">کل درآمدها</p>
-					<p class="text-2xl font-bold mt-2">{{toPrc(income)}}
-						تومان</p>
+					<p class="text-2xl font-bold mt-2" v-html="toPersianNumber(numberWithCommas(income))+' تومان'"></p>
 				</div>
 				<div class="bg-green-100 p-3 rounded-full">
 					<i class="fas fa-arrow-up text-green-500"></i>
@@ -71,8 +70,7 @@
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-gray-500">کل هزینه‌ها</p>
-					<p class="text-2xl font-bold mt-2">{{toPrc(expense)}}
-						تومان</p>
+					<p class="text-2xl font-bold mt-2" v-html="toPersianNumber(numberWithCommas(expense))+' تومان'"></p>
 				</div>
 				<div class="bg-red-100 p-3 rounded-full">
 					<i class="fas fa-arrow-down text-red-500"></i>
@@ -84,8 +82,7 @@
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-gray-500">تعداد کل تراکنش ها</p>
-					<p class="text-2xl font-bold mt-2">{{toNum(totalRecords)}}
-						تراکنش</p>
+					<p class="text-2xl font-bold mt-2" v-html="toPersianNumber(totalRecords)+' تراکنش'"></p>
 				</div>
 				<div class="bg-indigo-100 p-3 rounded-full">
 					<i class="fas fa-exchange-alt text-indigo-500"></i>
@@ -116,39 +113,37 @@
 				</thead>
 				<tbody class="bg-white divide-y divide-gray-200">
 					<!-- تراکنش   -->
-					{% for transaction in transactions %}
-					<tr data-transaction-id="{{transaction.id}}">
+					{# {% for transaction in transactions %} #}
+					<tr v-for="transaction in transactions" data-transaction-id="{{transaction.id}}">
 						<td class="px-6 py-4 whitespace-nowrap">
-							<div class="text-sm font-medium text-gray-900">{{transaction.title}}</div>
+							<div class="text-sm font-medium text-gray-900" v-html="transaction.title"></div>
 						</td>
 						<td class="px-6 py-4 whitespace-nowrap">
-							<div class="text-sm text-red-600 font-medium">{{toPrc(transaction.amount)}}</div>
+							<div class="text-sm text-red-600 font-medium" v-html="toPersianNumber(numberWithCommas(transaction.amount))"></div>
 						</td>
 						<td class="px-6 py-4 whitespace-nowrap">
-							<div class="text-sm text-gray-900">{{transaction.category_title}}</div>
+							<div class="text-sm text-gray-900" v-html="transaction.category_title"></div>
 						</td>
 						<td class="px-6 py-4 whitespace-nowrap">
-							<span
+							<span v-html="transaction.type == 'income' ? 'درآمد' : 'هزینه'"
 								class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-								{{transaction.type == 'income' ? 'درآمد' : 'هزینه'}}
 							</span>
 						</td>
 						<td class="px-6 py-4 whitespace-nowrap">
-							<div class="text-sm text-gray-500">{{toNum(jdate(transaction.created_at))}}</div>
+							<div class="text-sm text-gray-500" v-html="toPersianNumber(transaction.created_at)"></div>
 						</td>
 						<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
 							<button class="edit-btn text-indigo-600 hover:text-indigo-900 mr-3"
-								data-transaction="{{json(transaction)}}">
+								@click="showUpdateModal(transaction.id)">
 								<i class="fas fa-edit"></i>
 							</button>
-							<a href="#"
-								data-delete-url="{{base_url('/Transactions/delete_transaction')}}/{{transaction.id}}"
+							<button @click="deleteTransaction(transaction.id)"
 								class="delete-transaction-btn text-red-600 hover:text-red-900">
 								<i class="fas fa-trash"></i>
-							</a>
+							</button>
 						</td>
 					</tr>
-					{% endfor %}
+					{# {% endfor %} #}
 				</tbody>
 			</table>
 		</div>
@@ -169,35 +164,32 @@
 				<div>
 					<p class="text-sm text-gray-700">
 						نمایش
-						<span class="font-medium">{{offset+1}}</span>
+						<span class="font-medium" v-html="offset+1"></span>
 						تا
-						<span class="font-medium">{{(offset)+currentRecords}}</span>
+						<span class="font-medium" v-html="offset + currentRecords"></span>
 						از
-						<span class="font-medium">{{totalRecords}}</span>
+						<span class="font-medium" v-html="totalRecords"></span>
 						نتیجه
 					</p>
 				</div>
 				<div>
 					<nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-						<button onclick="
-								
-								navigatePages(-1)"
+						<button @click="navigatePages(-1)"
 							class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
 							<span class="sr-only">قبلی</span>
 							<i class="fas fa-chevron-right"></i>
 						</button>
-						{%for i in pages%}
-						<button onclick="goToPage({{i}})" class="{{i==currentPage ? " z-10 bg-indigo-50
-							border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm
-							font-medium"
-							: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-							}}">
-							{{toNum(i)}}
+
+						<button @click="goToPage(1)" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">ابتدا
 						</button>
-						{% endfor %}
-						<button onclick="
-								
-								navigatePages(1)"
+						
+						<button v-for="page in pages" @click="goToPage(page)" :class="{'z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium' : page==currentPage, 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium'  : page!=currentPage}" v-html="toPersianNumber(page)">
+						</button>
+
+						<button @click="goToPage(lastPage)" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">انتها
+						</button>
+						
+						<button @click="navigatePages(1)"
 							class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
 							<span class="sr-only">بعدی</span>
 							<i class="fas fa-chevron-left"></i>
@@ -209,29 +201,29 @@
 	</div>
 
 	<!-- مودال تراکنش -->
-	<div id="transactionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+	<div v-if="showModal" id="transactionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
 		<div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
 			<div class="flex justify-between items-center mb-4">
-				<h3 class="text-lg font-medium" id="modalTitle">تراکنش جدید</h3>
-				<button class="close-modal text-gray-400 hover:text-gray-500">
+				<h3 class="text-lg font-medium" id="modalTitle" v-html="modalTitle"></h3>
+				<button class="close-modal text-gray-400 hover:text-gray-500" @click="showModal=false">
 					<i class="fas fa-times"></i>
 				</button>
 			</div>
 
-			<form id="transactionForm" method="POST">
-				<input type="hidden" id="transactionId" name="transaction_id" value="">
+			<form @submit.prevent="insertTransaction" id="transactionForm" method="POST">
+				<input type="hidden" id="transactionId" name="transaction_id" :value="transactionId">
 				<div class="grid grid-cols-1 gap-4 mb-4">
 					<div>
 						<label for="transactionTitle" class="block text-sm font-medium text-gray-700 mb-1">عنوان
 							تراکنش</label>
-						<input type="text" id="transactionTitle" name="title"
+						<input type="text" id="transactionTitle" name="title" v-model="transactionTitle"
 							class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
 					</div>
 
 					<div>
 						<label for="transactionAmount" class="block text-sm font-medium text-gray-700 mb-1">مبلغ
 							(تومان)</label>
-						<input type="number" id="transactionAmount" name="amount"
+						<input type="number" id="transactionAmount" name="amount" v-model="transactionAmount"
 							class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
 					</div>
 
@@ -239,7 +231,7 @@
 						<div>
 							<label for="transactionType" class="block text-sm font-medium text-gray-700 mb-1">نوع
 								تراکنش</label>
-							<select id="transactionType" name="type"
+							<select id="transactionType" name="type" v-model="transactionType"
 								class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
 								<option value="income">درآمد</option>
 								<option value="expense">هزینه</option>
@@ -249,24 +241,24 @@
 						<div>
 							<label for="transactionCategory"
 								class="block text-sm font-medium text-gray-700 mb-1">دسته‌بندی</label>
-							<select id="transactionCategory" name="category_id"
+							<select v-model="transactionCategory" id="transactionCategory" name="category_id"
 								class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
 								<option selected disabled value="">انتخاب کنید</option>
-								{% for category in categories %}
-								<option value="{{category.id}}">{{category.title}}</option>
-								{% endfor %}
+								
+								<option v-for="category in categories" :value="category.id" v-html="category.title"></option>
+								
 							</select>
 						</div>
 					</div>
 				</div>
 
 				<div class="flex justify-end space-x-3">
-					<button type="button"
+					<button type="button"  @click="showModal=false"
 						class="close-modal mx-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
 						انصراف
 					</button>
 					<button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-						<span id="submitBtnText">ثبت تراکنش</span>
+						<span id="submitBtnText" v-html="submitBtnText"></span>
 					</button>
 				</div>
 			</form>
@@ -274,81 +266,201 @@
 	</div>
 </div>
 
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
 <!-- jQuery و اسکریپت‌های مربوطه -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-	$(document).ready(function () { // متغیر برای ذخیره حالت فعلی (ایجاد یا ویرایش)
-		let currentAction = 'create';
-
-		// باز کردن مودال برای ایجاد تراکنش جدید
-		$('#addTransactionBtn').click(function () {
-			currentAction = 'create';
-			$('#modalTitle').text('تراکنش جدید');
-			$('#submitBtnText').text('ثبت تراکنش');
-			$('#transactionForm').attr('action', '{{ base_url(' / Transactions / insert_transaction') }}');
-			$('#transactionId').val('');
-			$('#transactionForm')[0].reset();
-			$('#transactionModal').removeClass('hidden');
-		});
-
-		// باز کردن مودال برای ویرایش تراکنش
-		$(document).on('click', '.edit-btn', function () {
-			currentAction = 'edit';
-			let data = $(this).data('transaction');
-			$('#transactionId').val(data.id);
-			$('#transactionTitle').val(data.title);
-			$('#transactionAmount').val(data.amount);
-			$('#transactionCategory').val(data.category_title);
-			$('#transactionType').val(data.type === 'income' ? 'income' : 'expense');
-			$('#transactionCategory').val(data.category_id);
-
-			// تنظیمات فرم
-			$('#modalTitle').text('ویرایش تراکنش');
-			$('#submitBtnText').text('ذخیره تغییرات');
-			$('#transactionForm').attr('action', '{{ base_url(' / Transactions / insert_transaction') }}');
-			$('#transactionModal').removeClass('hidden');
-		});
-
-		// بستن مودال
-		$(document).on('click', '.close-modal', function () {
-			$('#transactionModal').addClass('hidden');
-		});
-
-		$('.delete-transaction-btn').on('click', function (e) {
-			e.preventDefault(); // stop navigation
-
-			let deleteUrl = $(this).data('delete-url');
-
-			Swal.fire({
-				title: "آیا مطمئنید؟",
-				text: "آیا می خواهید تراکنش مورد نظر حذف شود؟",
-				icon: "warning",
-				showCancelButton: true,
-				confirmButtonColor: "#3085d6",
-				cancelButtonColor: "#d33",
-				confirmButtonText: "بله، حذف کن!",
-				cancelButtonText: "خیر"
-			}).then((result) => {
-				if (result.isConfirmed) {
-					window.location.href = deleteUrl;
+	function successAlert(messageText){
+	        Swal.fire({title: "عملیات موفق",
+	        text:messageText,
+	        icon: "success",
+	        confirmButtonText: 'تائید'});
+        }
+    function failAlert(messageText){
+            Swal.fire({title: "خطا",
+            html: messageText,
+            icon: "error",
+            confirmButtonText: 'تائید'});
+	    }
+	Vue.createApp({
+		data(){
+			return{
+				transactions : [],
+				categories : [],
+				totalRecords : 0,
+				income : 0,
+				expense:0,
+				categoryId : 0,
+				type:null,
+				////////Modal///////
+				showModal:false,
+				modalTitle : 'تراکنش جدید',
+				submitBtnText : 'ثبت تراکنش',
+				transactionId : null,
+				transactionTitle : null,
+				transactionAmount : null,
+				transactionCategory : null,
+				transactionType : null,
+				////////Pagination////////
+				currentRecords : 0,
+				page : 1,
+				pages : [],
+				lastPage: 1,
+    			currentPage: 1,
+    			totalRecords: 10,
+    			offset: 0,
+			}
+		},
+        mounted(){
+            this.getData(this.page);
+        },
+        methods:{
+            toPersianNumber(enNumber) {
+                if (enNumber === null || enNumber === undefined) return '';
+                const numStr = String(enNumber);
+                const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+                return numStr.replace(/\d/g, function(match) {
+                return persianDigits[parseInt(match)];
+                });
+            },
+            numberWithCommas(x) {
+                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            },
+			getData(page){
+				console.log("hi");
+				const vm = this;
+                $.ajax({
+                    url: '{{base_url()}}Transactions/getData',
+                    method: 'GET',
+                    dataType: 'json',
+					data: {
+						'page' : page,
+						'category_id':vm.categoryId,
+						'type':vm.type
+					},
+                    success: function(response) {
+                      if (response.status === 'success') {
+                        vm.categories = response.data.categories;
+						vm.transactions = response.data.transactions;
+						vm.totalRecords = response.data.totalRecords;
+						vm.income = response.data.income;
+						vm.expense = response.data.expense;
+						vm.currentRecords = response.data.currentRecords,
+						vm.pages = response.data.pages,
+						vm.lastPage = response.data.lastPage,
+    					vm.currentPage = response.data.currentPage,
+    					vm.offset = response.data.offset
+                      } else {
+                        console.error('Failed :', response.message);
+                      }
+                    }
+                });
+			},
+			resetAndFetch(){
+				this.categoryId = 0;
+    			this.type = null;
+    			this.getData(1);
+			},
+			deleteTransaction(id){
+				const vm = this;
+				Swal.fire({
+                    title: "آیا مطمئنید؟",
+                    text: "آیا می خواهید تراکنش مورد نظر حذف شود؟",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "بله، حذف کن!",
+                    cancelButtonText: "خیر",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                    	url: `{{base_url('/Transactions/delete_transaction')}}/${id}`,
+                    	method: 'POST',
+                    	dataType: 'json',
+                    	success: function(response) {
+                    	  if (response.status === 'success') {
+							vm.getData(this.page);
+                    	    successAlert(response.message);
+                    	  } else {
+                    	    console.error('Failed :', response.message);
+                    	  }
+                    	}
+                });
+                    }
+                });
+			},
+			showInsertModal(){
+				this.showModal = true;
+				this.modalTitle = 'تراکنش جدید';
+				this.submitBtnText = 'ثبت تراکنش';
+				this.transactionId = this.transactionTitle = this.transactionAmount = null;
+				this.transactionCategory = '';
+				this.transactionType = 'income';
+			},
+			showUpdateModal(id){
+				this.showModal = true;
+				this.modalTitle = 'ویرایش تراکنش';
+				this.submitBtnText = 'ذخیره تغییرات';
+				const vm = this;
+                $.ajax({
+                    url: '{{base_url()}}Transactions/getTransaction',
+                    method: 'GET',
+                    dataType: 'json',
+					data : {
+						'id': id
+					},
+                    success: function(response) {
+                      if (response.status === 'success') {
+                        vm.transactionId = id;
+						vm.transactionTitle = response.data.title;
+						vm.transactionAmount = response.data.amount;
+						vm.transactionCategory = response.data.category_id;
+						vm.transactionType = response.data.type;
+                      } else {
+                        console.error('Failed :', response.message);
+                      }
+                    }
+                });
+			},
+			insertTransaction(){
+				const vm = this;
+                $.ajax({
+                    url: "{{base_url('/Transactions/insert_transaction')}}",
+                    method: 'post',
+                    dataType: 'json',
+					data : {
+						'transaction_id' : vm.transactionId,
+						'title':vm.transactionTitle,
+                        'amount':vm.transactionAmount,
+                        'type':vm.transactionType,
+                        'category_id':vm.transactionCategory
+					},
+                    success: function(response) {
+                      if (response.status === 'success') {
+                        successAlert(response.message);
+						vm.showModal = false;
+						vm.getData(this.page);
+                      } else {
+						failAlert(response.message);
+                      }
+                    }
+                });
+			},
+			navigatePages(navigate) {
+				newPage = this.page + navigate;
+				if (newPage >= 1 && newPage <= this.lastPage) {
+					this.page=newPage;
+					this.getData(this.page);
 				}
-			});
-		});
-	});
-	function goToPage(page) {
-		const url = new URL(window.location.href);
-		url.searchParams.set('page', page);
-		window.location.href = url.toString();
-	}
-
-	function navigatePages(navigate) {
-		const url = new URL(window.location.href);
-		let currentPage = url.searchParams.get('page') || 1;
-		let siblingPage = parseInt(currentPage) + navigate;
-		url.searchParams.set('page', siblingPage);
-		if (siblingPage >= 1 && siblingPage <= {{ lastPage }}) {
-		window.location.href = url.toString();
-	}
-}
+			},
+			goToPage(page) {
+				this.page = page;
+				this.getData(page);
+			}
+		}
+	}).mount("#transaction-page");
 </script>
 {% endblock %}

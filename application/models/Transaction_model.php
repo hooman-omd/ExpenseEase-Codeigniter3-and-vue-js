@@ -35,6 +35,15 @@ class Transaction_model extends CI_Model
         return $result->result();
     }
 
+    public function getTransaction(int $id){
+        $this->can($id);
+        $category = $this->db->where('id',$id)
+        ->from("transactions")
+        ->get()
+        ->row();
+        return $category;
+    }
+
     public function getTransactions(int|null $category_id = null, string|null $type = null, int|null $offset = 0, int $rowPerPage = 5)
     {
         $offset = $offset == 0 ? 0 : ($offset - 1) * $rowPerPage;
@@ -42,9 +51,10 @@ class Transaction_model extends CI_Model
 
         $this->db->select('transactions.*, categories.title as category_title')
             ->from('transactions')
-            ->join('categories', 'transactions.category_id = categories.id AND categories.user_id = ' . $this->userId);
+            ->where('transactions.user_id',$this->userId)
+            ->join('categories', 'transactions.category_id = categories.id');
 
-        if (isset($category_id)) {
+        if (isset($category_id) && $category_id != 0) {
             $this->db->where("category_id", $category_id);
         }
         if (!empty($type)) {
@@ -57,9 +67,10 @@ class Transaction_model extends CI_Model
 
         $this->db->select('COUNT(transactions.id) as total', false)
             ->from('transactions')
-            ->join('categories', 'transactions.category_id = categories.id AND categories.user_id = ' . $this->userId);
+            ->where('transactions.user_id = ' . $this->userId)
+            ->join('categories', 'transactions.category_id = categories.id');
 
-        if (isset($category_id)) {
+        if (isset($category_id) && $category_id != 0) {
             $this->db->where("category_id", $category_id);
         }
         if (!empty($type)) {
@@ -111,15 +122,6 @@ class Transaction_model extends CI_Model
 
     public function getChartData(int $k = 14)
     {
-        // $data = $this->db->select("
-        // SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as all_incomes,
-        // SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as all_expenses,
-        // created_at")
-        // ->from('transactions')
-        // ->where('user_id',$this->userId)
-        // ->group_by('created_at')
-        // ->get()
-        // ->result();
         $data = $this->db->select("
         DATE_FORMAT(created_at, '%Y-%m-%d') as txn_date,
         SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as all_incomes,
@@ -127,9 +129,10 @@ class Transaction_model extends CI_Model
         ")
             ->from('transactions')
             ->where('user_id', $this->userId)
-            ->where("created_at >=", "DATE_SUB(CURDATE(), INTERVAL {$k} DAY)", false)
+            //->where("created_at >=", "DATE_SUB(CURDATE(), INTERVAL {$k} DAY)", false)  k days from today
             ->group_by("DATE_FORMAT(created_at, '%Y-%m-%d')")
-            ->order_by('txn_date', 'ASC')
+            ->order_by('txn_date', 'DESC')
+            ->limit($k,0)
             ->get()
             ->result();
 
